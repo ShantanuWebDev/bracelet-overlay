@@ -1,42 +1,47 @@
-    for hand_landmarks in results.multi_hand_landmarks:
+if results.multi_hand_landmarks:
+        for hand_landmarks in results.multi_hand_landmarks:
+            # Draw the hand landmarks on the frame
+            mp_drawing.draw_landmarks(
+                frame, 
+                hand_landmarks, 
+                mp_hands.HAND_CONNECTIONS, 
+                mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=4),  # Customize landmark dots
+                mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2)  # Customize connections between landmarks
+            )
             try:
-                # Get wrist landmark (Landmark 0 is the wrist in Mediapipe Hand Model)
+                # Get wrist and index finger's knuckle (MCP joint)
                 wrist = hand_landmarks.landmark[mp_hands.HandLandmark.WRIST]
-                pinky = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]
+                index_knuckle = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP]
 
                 h, w, c = frame.shape
                 wrist_x, wrist_y = int(wrist.x * w), int(wrist.y * h)
-                pinky_x, pinky_y = int(pinky.x * w), int(pinky.y * h)
+                index_x, index_y = int(index_knuckle.x * w), int(index_knuckle.y * h)
 
-                # Calculate the distance between wrist and pinky to determine scale factor
-                distance = calculate_distance((wrist_x, wrist_y), (pinky_x, pinky_y))
+                # Calculate distance between wrist and index knuckle for scaling
+                distance = calculate_distance((wrist_x, wrist_y), (index_x, index_y))
 
-                # Calculate the angle between wrist and pinky
-                delta_x = pinky_x - wrist_x
-                delta_y = pinky_y - wrist_y
-                angle_rad = np.arctan2(delta_y, delta_x)  # Angle in radians
-                angle_deg = np.degrees(angle_rad)  # Convert to degrees
+                delta_x = index_x - wrist_x
+                delta_y = index_y - wrist_y
+                angle_rad = np.arctan2(delta_y, delta_x)
+                angle_deg = np.degrees(angle_rad)
 
-                # Debug: Check the distance and scale factor
-                print(f"Distance between wrist and pinky: {distance}")
-                scale_factor = distance / 850.0  # Adjusted scaling factor
-                print(f"Scale Factor: {scale_factor}")
-                print(f"Initial Angle (deg): {angle_deg}")
+                # Normalize the angle to keep it consistent across all hand orientations
+                if angle_deg < 0:
+                    angle_deg += 360
 
-                # Adjust angle based on hand orientation
-                if wrist_x < pinky_x:  # Right hand
-                    angle_deg -= 90  # Adjust for right hand
-                else:  # Left hand
-                    angle_deg += 90  # Adjust for left hand
+                # Scaling factor based on a more stable bone length (wrist to knuckle)
+                scale_factor = distance / 500.0  # Adjust scaling divisor as needed
 
-                # Flip angle if needed
-                angle_deg = -angle_deg  # Flip if required
+                # Correct angle to ensure the bracelet is oriented properly
+                if wrist_x < index_x:
+                    angle_deg -= 110
+                else:
+                    angle_deg += 110
 
-                # Overlay the bracelet at wrist coordinates
+                angle_deg = -angle_deg
+
+                # Overlay the bracelet at the wrist
                 frame = overlay_bracelet(frame, bracelet, wrist_x, wrist_y, angle_deg, scale_factor)
-
-                # Optional: Draw hand landmarks for debugging
-                mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
             except Exception as e:
                 print(f"Error processing hand landmarks: {e}")
