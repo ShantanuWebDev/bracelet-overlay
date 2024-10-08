@@ -68,13 +68,13 @@ while cap.isOpened():
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
             # Draw the hand landmarks on the frame
-            # mp_drawing.draw_landmarks(
-            #     frame, 
-            #     hand_landmarks, 
-            #     mp_hands.HAND_CONNECTIONS, 
-            #     mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=4),  # Customize landmark dots
-            #     mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2)  # Customize connections between landmarks
-            # )
+            mp_drawing.draw_landmarks(
+                frame, 
+                hand_landmarks, 
+                mp_hands.HAND_CONNECTIONS, 
+                mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=4),  # Customize landmark dots
+                mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2)  # Customize connections between landmarks
+            )
             try:
                 # Get wrist and index finger's knuckle (MCP joint)
                 wrist = hand_landmarks.landmark[mp_hands.HandLandmark.WRIST]
@@ -93,8 +93,7 @@ while cap.isOpened():
                 angle_deg = np.degrees(angle_rad)
 
                 # Keep angle horizontal relative to hand tilt
-                angle_deg = 110 - angle_deg
-
+                angle_deg = 110 - angle_deg                     
                 # Scaling factor based on a more stable bone length (wrist to knuckle)
                 scale_factor = distance / 500.0  # Adjust scaling divisor as needed
 
